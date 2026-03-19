@@ -1,0 +1,7 @@
+{
+  "name": "ImmoCommissions",
+  "description": "Plateforme SaaS de gestion immobilière multi-tenant pour les agences marocaines, incluant la gestion des commissions, des paiements et de l'inventaire.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
