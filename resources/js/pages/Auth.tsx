@@ -21,21 +21,42 @@ const Auth: React.FC = () => {
     const [password, setPassword] = useState("");
     const [passwordConfirmation, setPasswordConfirmation] = useState("");
     const [fullName, setFullName] = useState("");
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         try {
             if (isSignUp) {
                 if (password !== passwordConfirmation) {
-                    alert("Passwords do not match!");
+                    setError("Passwords do not match!");
                     return;
                 }
                 await signUp(email, fullName, password, passwordConfirmation);
             } else {
                 await signIn(email, password);
             }
-        } catch (error) {
-            console.error("Auth error", error);
+        } catch (err: any) {
+            console.error("Auth error", err);
+
+            // Extract a user-friendly error message if available
+            if (err.response?.data?.message) {
+                setError(err.response.data.message);
+            } else if (err.response?.status === 401) {
+                setError(
+                    t(
+                        "auth_invalid_credentials",
+                        "Invalid credentials. Please try again.",
+                    ),
+                );
+            } else {
+                setError(
+                    t(
+                        "auth_generic_error",
+                        "An error occurred. Please try again.",
+                    ),
+                );
+            }
         }
     };
 
@@ -107,6 +128,12 @@ const Auth: React.FC = () => {
                                 : t("auth_login_desc")}
                         </p>
                     </div>
+
+                    {error && (
+                        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium animate-fadeIn">
+                            {error}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {isSignUp && (
