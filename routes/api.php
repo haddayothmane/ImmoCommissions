@@ -67,7 +67,9 @@ Route::middleware("auth:sanctum")->group(function () {
             "user" => $user,
             "agency" => $user->agency,
             "employee" => $user,
-            "permissions" => $user->role ? $user->role->permissions->pluck('slug') : [],
+            "permissions" => (is_object($user->role) && method_exists($user->role, 'permissions')) 
+                ? $user->role->permissions->pluck('slug') 
+                : [],
         ]);
     });
 });
