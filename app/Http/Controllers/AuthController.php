@@ -19,14 +19,12 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
-            $agency = \App\Models\Agency::first();
-            
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => 'admin',
-                'agence_id' => $agency ? $agency->id : null,
+                'agence_id' => null, // Do not auto-assign, force them to onboarding
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
