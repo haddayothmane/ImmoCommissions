@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Models\Role;
 
 class AuthController extends Controller
 {
@@ -19,12 +20,14 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8|confirmed',
             ]);
 
+            $adminRole = Role::where('slug', 'admin')->first();
+
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
+                'name'     => $request->name,
+                'email'    => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => 'admin',
-                'agence_id' => null, // Do not auto-assign, force them to onboarding
+                'role_id'  => $adminRole?->id, // Assign admin role via FK
+                'agence_id'=> null, // Do not auto-assign, force them to onboarding
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;

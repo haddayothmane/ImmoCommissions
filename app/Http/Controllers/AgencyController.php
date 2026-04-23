@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agency;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,22 +38,26 @@ class AgencyController extends Controller
                 'subscription_status' => 'active',
             ]);
 
-            // 2. Link the current user to the agency
+            // Pre-load roles to avoid N+1 queries
+            $roles = Role::whereIn('slug', ['admin', 'agent', 'comptable'])
+                ->pluck('id', 'slug');
+
+            // 2. Link the current user to the agency as admin
             $user->update([
                 'agence_id' => $agency->id,
-                'role' => 'admin', // Ensure the creator is the admin
+                'role_id'   => $roles['admin'] ?? null,
             ]);
 
             // 3. Create invited employees
             if ($request->has('employees')) {
                 foreach ($request->employees as $empData) {
                     User::create([
-                        'name' => $empData['name'],
-                        'email' => $empData['email'],
-                        'role' => $empData['role'],
+                        'name'      => $empData['name'],
+                        'email'     => $empData['email'],
+                        'role_id'   => $roles[$empData['role']] ?? $roles['agent'] ?? null,
                         'agence_id' => $agency->id,
-                        'password' => Hash::make('password'), // Default password
-                        'active' => true,
+                        'password'  => Hash::make('password'), // Default password
+                        'active'    => true,
                     ]);
                 }
             }
