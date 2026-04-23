@@ -74,16 +74,60 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
+    /**
+     * Safely load and return the related Role model.
+     * Returns null if no role is associated or if the stored value is not a Role instance.
+     */
+    protected function getRoleModel(): ?\App\Models\Role
+    {
+        if (! $this->relationLoaded('role')) {
+            $this->load('role');
+        }
+
+        $relation = $this->getRelation('role');
+
+        // Guard: if the relation returned a non-object (e.g. a legacy string column),
+        // return null so callers never receive a plain string.
+        if (! ($relation instanceof \App\Models\Role)) {
+            return null;
+        }
+
+        return $relation;
+    }
+
+    /**
+     * Accessor: $user->role returns the Role model (or null).
+     * NOTE: because this accessor shadows the "role" relationship name,
+     * always use getRoleModel() internally instead of $this->role.
+     */
+    public function getRoleAttribute(): ?\App\Models\Role
+    {
+        return $this->getRoleModel();
+    }
+
     public function hasPermission(string $permissionSlug): bool
     {
-        if (!$this->role) return false;
-        return $this->role->permissions->contains('slug', $permissionSlug);
+        $roleModel = $this->getRoleModel();
+        if (! $roleModel) {
+            return false;
+        }
+        return $roleModel->permissions->contains('slug', $permissionSlug);
     }
 
     public function hasRole(string $roleSlug): bool
     {
-        if (!$this->role) return false;
-        return $this->role->slug === $roleSlug;
+        $roleModel = $this->getRoleModel();
+        if ($roleModel) {
+            return $roleModel->slug === $roleSlug;
+        }
+
+        // Fallback: if no Role relation exists, check a legacy plain-text "role" DB column.
+        $legacyRole = $this->attributes['role'] ?? null;
+        if (is_string($legacyRole)) {
+            return $legacyRole === $roleSlug;
+        }
+
+        return false;
     }
 
     /**
